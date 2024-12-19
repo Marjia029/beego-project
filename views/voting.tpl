@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="favorites-container">
+        <div class="favorites-container" id="favorites-section" style="display: none;">
             <h2>Your Favorites</h2>
             <ul>
                 {{range .Favorites}}
@@ -54,5 +54,6 @@
             </ul>
         </div>
     </div>
+    <script src="/static/js/favs.js"></script>
 </body>
 </html>
