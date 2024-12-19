@@ -9,21 +9,22 @@ import (
 	"github.com/beego/beego/v2/server/web"
 )
 
-type BreedImage struct { // Renamed to avoid conflicts
+type BreedImage struct {
 	URL string `json:"url"`
 }
 
-type CatBreed struct { // Renamed Breed to CatBreed
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+type CatBreed struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Origin       string `json:"origin"`
+	WikipediaURL string `json:"wikipedia_url"`
 }
 
 type BreedSearchController struct {
 	web.Controller
 }
 
-// Get handles the search page rendering
 func (c *BreedSearchController) Get() {
 	apiKey := "live_GWXcPdnWze27MNMJSjinKshtfsnVsi4EdrXfKUNhOmXsLakl5N7MwJCShLvC5Rxo"
 	url := "https://api.thecatapi.com/v1/breeds"
@@ -52,45 +53,46 @@ func (c *BreedSearchController) Get() {
 		return
 	}
 
-	var breeds []CatBreed // Directly using CatBreed struct here
+	var breeds []CatBreed
 	if err := json.Unmarshal(body, &breeds); err != nil {
 		c.Data["Error"] = "Failed to parse breed list."
 		c.TplName = "breed_search.tpl"
 		return
 	}
 
+	// Set default selected breed (first breed)
+	if len(breeds) > 0 {
+		c.fetchBreedDetails(breeds[0].ID)
+	}
+
+	c.Data["ActiveTab"] = "breeds"
 	c.Data["Breeds"] = breeds
 	c.TplName = "breed_search.tpl"
+
 }
 
-// Post handles the breed search and displays the result
 func (c *BreedSearchController) Post() {
 	breedID := c.GetString("breed_id")
 	if breedID == "" {
-		c.Data["Error"] = "Please select a breed."
-		c.TplName = "breed_search.tpl"
+		c.Redirect("/breed-search", 302)
 		return
 	}
 
+	c.fetchBreedDetails(breedID)
+	c.TplName = "breed_search.tpl"
+	c.Data["ActiveTab"] = "breeds"
+}
+
+func (c *BreedSearchController) fetchBreedDetails(breedID string) {
 	apiKey := "live_GWXcPdnWze27MNMJSjinKshtfsnVsi4EdrXfKUNhOmXsLakl5N7MwJCShLvC5Rxo"
 
 	// Fetch breed details
 	breedDetailsURL := "https://api.thecatapi.com/v1/breeds"
-	req, err := http.NewRequest("GET", breedDetailsURL, nil)
-	if err != nil {
-		c.Data["Error"] = "Failed to create breed details request."
-		c.TplName = "breed_search.tpl"
-		return
-	}
+	req, _ := http.NewRequest("GET", breedDetailsURL, nil)
 	req.Header.Set("x-api-key", apiKey)
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.Data["Error"] = "Failed to fetch breed details."
-		c.TplName = "breed_search.tpl"
-		return
-	}
+	resp, _ := client.Do(req)
 	defer resp.Body.Close()
 
 	var breeds []CatBreed
@@ -105,24 +107,20 @@ func (c *BreedSearchController) Post() {
 		}
 	}
 
-	// Fetch images for the breed
-	imagesURL := fmt.Sprintf("https://api.thecatapi.com/v1/images/search?breed_ids=%s&limit=10", breedID)
+	// Fetch images
+	imagesURL := fmt.Sprintf("https://api.thecatapi.com/v1/images/search?breed_ids=%s&limit=8", breedID)
 	req, _ = http.NewRequest("GET", imagesURL, nil)
 	req.Header.Set("x-api-key", apiKey)
 
-	resp, err = client.Do(req)
-	if err != nil {
-		c.Data["Error"] = "Failed to fetch breed images."
-		c.TplName = "breed_search.tpl"
-		return
-	}
+	resp, _ = client.Do(req)
 	defer resp.Body.Close()
 
-	var images []BreedImage // Renamed to BreedImage to avoid conflict
+	var images []BreedImage
 	body, _ = ioutil.ReadAll(resp.Body)
 	json.Unmarshal(body, &images)
 
 	c.Data["SelectedBreed"] = selectedBreed
 	c.Data["BreedImages"] = images
-	c.TplName = "breed_search.tpl"
+	c.Data["Breeds"] = breeds
+
 }

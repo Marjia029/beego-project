@@ -7,6 +7,10 @@ import (
 )
 
 func init() {
+
+	// Serve static files
+	beego.SetStaticPath("/static", "static")
+
 	beego.Router("/", &controllers.MainController{})
 
 	// New route for the API page
@@ -24,5 +28,7 @@ func init() {
 	beego.Router("/breed-images", &controllers.BreedImagesController{})
 
 	beego.Router("/breed-search", &controllers.BreedSearchController{})
+
+	beego.Router("/voting", &controllers.VotingController{})
 
 }
