@@ -24,40 +24,54 @@ func (c *VotingController) Get() {
 	apiKey := "live_GWXcPdnWze27MNMJSjinKshtfsnVsi4EdrXfKUNhOmXsLakl5N7MwJCShLvC5Rxo"
 	url := "https://api.thecatapi.com/v1/images/search"
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		c.Data["Error"] = "Failed to create API request."
+	// Create channels for concurrent fetching
+	imageChan := make(chan VotingCatImage)
+	errChan := make(chan error)
+
+	// Fetch random cat image concurrently
+	go func() {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			errChan <- err
+			return
+		}
+		req.Header.Set("x-api-key", apiKey)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		var images []VotingCatImage
+		if err := json.Unmarshal(body, &images); err != nil {
+			errChan <- err
+			return
+		}
+
+		if len(images) > 0 {
+			imageChan <- images[0] // Send the first image to the channel
+		}
+	}()
+
+	// Wait for either the image or an error
+	select {
+	case img := <-imageChan:
+		// Set the image URL to be displayed
+		c.Data["ImageURL"] = img.URL
+	case err := <-errChan:
+		// Handle error
+		c.Data["Error"] = "Failed to fetch cat image: " + err.Error()
 		c.TplName = "voting.tpl"
 		return
-	}
-	req.Header.Set("x-api-key", apiKey)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.Data["Error"] = "Failed to fetch random cat image."
-		c.TplName = "voting.tpl"
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		c.Data["Error"] = "Failed to read API response."
-		c.TplName = "voting.tpl"
-		return
-	}
-
-	var images []VotingCatImage
-	if err := json.Unmarshal(body, &images); err != nil {
-		c.Data["Error"] = "Failed to parse image response."
-		c.TplName = "voting.tpl"
-		return
-	}
-
-	// Set the image URL to be displayed
-	if len(images) > 0 {
-		c.Data["ImageURL"] = images[0].URL
 	}
 
 	// Pass the favorites list to the template
