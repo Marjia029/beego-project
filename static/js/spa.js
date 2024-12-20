@@ -3,6 +3,7 @@ let currentPage = 'voting';
 let swiper = null;
 let currentImageUrl = '';
 let favorites = [];
+let currentBreedId = null;
 
 // API endpoints
 const API_KEY = 'live_GWXcPdnWze27MNMJSjinKshtfsnVsi4EdrXfKUNhOmXsLakl5N7MwJCShLvC5Rxo';
@@ -16,6 +17,13 @@ const API_ENDPOINTS = {
 document.addEventListener('DOMContentLoaded', function() {
     setupNavigation();
     setupBreedSelect();
+
+    // Load favorites from localStorage
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+        favorites = JSON.parse(savedFavorites);
+    }
+
     loadInitialPage();
 });
 
@@ -30,7 +38,7 @@ function setupNavigation() {
     });
 }
 
-// Page navigation
+// Update page navigation function
 async function navigateToPage(page) {
     // Hide all content sections
     document.querySelectorAll('.page-content').forEach(content => {
@@ -40,8 +48,8 @@ async function navigateToPage(page) {
     // If navigating to voting page, clear current image while loading
     if (page === 'voting') {
         const votingImage = document.getElementById('voting-image');
-        votingImage.src = ''; // Clear the current image
-        currentImageUrl = ''; // Reset current image URL
+        votingImage.src = '';
+        currentImageUrl = '';
     }
 
     // Show selected content
@@ -58,11 +66,14 @@ async function navigateToPage(page) {
     // Load page-specific content
     switch(page) {
         case 'voting':
-            await loadRandomCat(); // Using await to ensure image loads immediately
+            await loadRandomCat();
             break;
         case 'breeds':
             if (!document.querySelector('#breed-select').options.length) {
-                loadBreeds();
+                await loadBreeds();
+            } else if (currentBreedId) {
+                // Reload current breed details when returning to breeds page
+                await loadBreedDetails(currentBreedId);
             }
             break;
         case 'favorites':
@@ -115,12 +126,14 @@ async function handleFavorite() {
             body: `action=favorite&image_url=${currentImageUrl}`
         });
         const data = await response.json();
-        // Update the current image with the new one
+        
         currentImageUrl = data.image_url;
         document.getElementById('voting-image').src = data.image_url;
-        // Update favorites array
+        
+        // Update favorites array and save to localStorage
         favorites = data.favorites;
-        // Update favorites display if we're on the favorites page
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+
         if (currentPage === 'favorites') {
             displayFavorites();
         }
@@ -129,7 +142,8 @@ async function handleFavorite() {
     }
 }
 
-// Breeds page functions
+
+// Update setupBreedSelect function
 async function setupBreedSelect() {
     const select = document.querySelector('#breed-select');
     select.addEventListener('change', async (e) => {
@@ -159,8 +173,23 @@ async function loadBreeds() {
     }
 }
 
+// Update loadBreedDetails function
 async function loadBreedDetails(breedId) {
     try {
+        currentBreedId = breedId;
+
+        // Clear existing content immediately
+        document.querySelector('.breed-title').innerHTML = '';
+        document.querySelector('.breed-description').textContent = '';
+        document.querySelector('.wiki-link').style.display = 'none';
+        
+        // Destroy existing swiper and clear slides
+        if (swiper) {
+            swiper.destroy(true, true);
+        }
+        const swiperWrapper = document.querySelector('.swiper-wrapper');
+        swiperWrapper.innerHTML = '';
+
         // Load breed information
         const breedResponse = await fetch(API_ENDPOINTS.breeds, {
             headers: { 'x-api-key': API_KEY }
@@ -176,8 +205,6 @@ async function loadBreedDetails(breedId) {
         if (breed.wikipedia_url) {
             wikiLink.href = breed.wikipedia_url;
             wikiLink.style.display = 'inline';
-        } else {
-            wikiLink.style.display = 'none';
         }
 
         // Load breed images
@@ -187,15 +214,11 @@ async function loadBreedDetails(breedId) {
         const images = await imagesResponse.json();
 
         // Update swiper slides
-        const swiperWrapper = document.querySelector('.swiper-wrapper');
         swiperWrapper.innerHTML = images.map(img => 
             `<div class="swiper-slide"><img src="${img.url}" alt="Breed Image"></div>`
         ).join('');
 
-        // Initialize or update swiper
-        if (swiper) {
-            swiper.destroy();
-        }
+        // Initialize new swiper
         swiper = new Swiper('.swiper', {
             slidesPerView: 1,
             spaceBetween: 0,
@@ -210,6 +233,22 @@ async function loadBreedDetails(breedId) {
                 clickable: true,
             },
         });
+
+        // Add hover listeners for autoplay pause/resume
+        const swiperContainer = document.querySelector('.swiper');
+        if (swiperContainer) {
+            swiperContainer.addEventListener('mouseenter', () => {
+                if (swiper && swiper.autoplay) {
+                    swiper.autoplay.stop();
+                }
+            });
+            swiperContainer.addEventListener('mouseleave', () => {
+                if (swiper && swiper.autoplay) {
+                    swiper.autoplay.start();
+                }
+            });
+        }
+
     } catch (error) {
         console.error('Error loading breed details:', error);
     }

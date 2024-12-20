@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/voting.css">
     <link rel="stylesheet" href="/static/css/breed_search.css">
+    <li src="/static/css/favs.css"></li>
 </head>
 <body>
     <div class="content-container">
@@ -41,7 +42,7 @@
         <div id="voting-content" class="page-content">
             <h1>Vote for a Cat!</h1>
             <div class="image-container">
-                <img id="voting-image" src="" alt="Cat Image">
+                <img id="voting-image" src="">
             </div>
             <div class="buttons-container">
                 <button class="heart-icon" onclick="handleFavorite()">❤</button>
@@ -74,6 +75,10 @@
         <div id="favorites-content" class="page-content">
             <h1>Your Favorite Cat Images</h1>
             <div class="favorites-container">
+                <div id="favorites-controls">
+                    <button id="grid-view-btn">Grid View</button>
+                    <button id="column-view-btn">Column View</button>
+                </div>
                 <ul id="favorites-list">
                     <!-- Favorites will be populated by JavaScript -->
                 </ul>
@@ -83,5 +88,6 @@
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="/static/js/spa.js"></script>
+    <script src="/static/js/fav_view.js"></script>
 </body>
 </html>
