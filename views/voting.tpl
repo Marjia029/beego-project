@@ -10,50 +10,28 @@
 </head>
 <body>
     <div class="content-container">
-
         {{template "navbar" .}}
-
         <h1>Vote for a Cat!</h1>
 
         <div class="image-container">
-            <img src="{{.ImageURL}}" alt="Cat Image">
+            <img id="cat-image" src="{{.ImageURL}}" alt="Cat Image">
         </div>
 
         <!-- Buttons container below the image -->
         <div class="buttons-container">
             <!-- Heart icon (add to favorites) -->
-            <form method="POST" action="/voting">
-                <input type="hidden" name="action" value="favorite">
-                <input type="hidden" name="image_url" value="{{.ImageURL}}">
-                <button type="submit" class="heart-icon">&#10084;</button>
-            </form>
+            <button id="favorite-button" class="heart-icon" data-action="favorite" data-image-url="{{.ImageURL}}">&#10084;</button>
 
-            <div class = "like-dislike-container">
-                    <!-- Like and Dislike buttons -->
-                <form method="POST" action="/voting">
-                    <input type="hidden" name="action" value="like">
-                    <input type="hidden" name="image_url" value="{{.ImageURL}}">
-                    <button type="submit" class="like-button">👍</button>
-                </form>
-
-                <form method="POST" action="/voting">
-                    <input type="hidden" name="action" value="dislike">
-                    <input type="hidden" name="image_url" value="{{.ImageURL}}">
-                    <button type="submit" class="dislike-button">👎</button>
-                </form>
-
+            <div class="like-dislike-container">
+                <!-- Like and Dislike buttons -->
+                <button id="like-button" class="like-button" data-action="like" data-image-url="{{.ImageURL}}">👍</button>
+                <button id="dislike-button" class="dislike-button" data-action="dislike" data-image-url="{{.ImageURL}}">👎</button>
             </div>
         </div>
 
-        <div class="favorites-container" id="favorites-section" style="display: none;">
-            <h2>Your Favorites</h2>
-            <ul>
-                {{range .Favorites}}
-                    <li><img src="{{.}}" alt="Favorite Image" width="100"></li>
-                {{end}}
-            </ul>
-        </div>
-    </div>
-    <script src="/static/js/favs.js"></script>
+       
+
+    <!-- <script src="/static/js/voting.js"></script> -->
+
 </body>
 </html>

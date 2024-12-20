@@ -31,3 +31,24 @@ body {
     border-radius: 10px;
     
 }
+
+
+/* Footer styles */
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background-color: #f8f8f8; /* Optional: change background color */
+    padding: 10px 0; /* Optional: change padding */
+    font-size: 14px; /* Optional: change font size */
+    text-align: center; /* Center the text horizontally */
+}
+
+footer p {
+    margin: 0 ; /* Removes default margin from <p> */
+}
+

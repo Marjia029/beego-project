@@ -85,13 +85,18 @@ func (c *VotingController) Post() {
 	action := c.GetString("action")
 	imageURL := c.GetString("image_url")
 
-	switch action {
-	case "like", "dislike":
-		// Simply get a new image after the like/dislike action
-		c.Redirect("/voting", 302)
-	case "favorite":
+	// Handle favorite action
+	if action == "favorite" {
 		// Add the image to favorites
 		favorites = append(favorites, imageURL)
-		c.Redirect("/voting", 302)
 	}
+
+	// Fetch a new random cat image if like/dislike action
+	if action == "like" || action == "dislike" || action == "favorite" {
+		c.Get() // This will fetch a new random image and update `c.Data["ImageURL"]`
+	}
+
+	// Send the updated image URL and favorites list as a JSON response
+	c.Data["json"] = map[string]interface{}{"image_url": c.Data["ImageURL"], "favorites": favorites}
+	c.ServeJSON()
 }
